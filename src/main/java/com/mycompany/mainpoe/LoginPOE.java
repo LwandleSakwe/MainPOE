@@ -65,8 +65,7 @@ public class LoginPOE {
         if (checkUserName(username)) {
             result.append("Username successfully captured. ");
         } else {
-            result.append("Username is not correctly formatted; please ensure that your username " +
-                    "contains an underscore and is no more than 15 characters in length. ");
+            result.append("Username is not correctly formatted; please ensure that your username contains an underscore and is no more than 15 characters in length. ");
         }
 
         if (checkPasswordComplexity(password)) {
@@ -78,8 +77,7 @@ public class LoginPOE {
         if (checkCellPhoneNumber(cellNumber)) {
             result.append("Cell number successfully captured.");
         } else {
-            result.append("Cell number is incorrectly formatted or does not contain an international " +
-                    "code. Correct the number and try again.");
+            result.append("Cell number is incorrectly formatted or does not contain an international code. Correct the number and try again.");
         }
 
         // Only save the account if every check passed
