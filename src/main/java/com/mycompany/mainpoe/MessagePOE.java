@@ -134,8 +134,6 @@ public class MessagePOE {
     }
 
     // Stores every stored message in messages.json as a JSON array.
-    // References: JSON format from https://www.json.org/json-en.html
-    // Writing to a file with FileWriter from https://docs.oracle.com/javase/tutorial/essential/io/index.html
     public void storeMessage() {
         storedMessages.add(this);
 
