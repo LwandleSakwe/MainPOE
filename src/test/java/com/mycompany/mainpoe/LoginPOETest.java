@@ -72,7 +72,7 @@ public class LoginPOETest {
         String result = login.registerUser("Lwandle", "Sakwe", "lwandlessss", "Ch&&sec@ke99!", "+27838968976");
         assertTrue(result.contains(
                 "Username is not correctly formatted; please ensure that your username " +
-                "contains an underscore and is no more than five characters in length."));
+                "contains an underscore and is no more than 16 characters in length."));
     }
 
     // loginUser (assertTrue / assertFalse)
@@ -105,7 +105,7 @@ public class LoginPOETest {
     void returnLoginStatusForFailedLogin() {
         LoginPOE login = new LoginPOE();
         login.registerUser("Lwandle", "Sakwe", "Lwandle_S", "Ch&&sec@ke99!", "+27838968976");
-        boolean loggedIn = login.loginUser("Lwandle-S", "wrongPassword");
+        boolean loggedIn = login.loginUser("Lwandle_S", "wrongPassword");
         assertEquals("Username or password incorrect, please try again.", login.returnLoginStatus(loggedIn));
     }
 }
