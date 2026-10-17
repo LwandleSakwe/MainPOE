@@ -65,7 +65,7 @@ public class LoginPOE {
         if (checkUserName(username)) {
             result.append("Username successfully captured. ");
         } else {
-            result.append("Username is not correctly formatted; please ensure that your username contains an underscore and is no more than 15 characters in length. ");
+            result.append("Username is not correctly formatted; please ensure that your username contains an underscore and is no more than 16 characters in length. ");
         }
 
         if (checkPasswordComplexity(password)) {
