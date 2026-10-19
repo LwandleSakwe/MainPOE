@@ -58,7 +58,7 @@ public class MessagePOETest {
     @Test
     void messageHashCorrectForTestCase1() {
         MessagePOE message = new MessagePOE("0012345678", 0, recipient1, message1);
-        assertEquals("00:0:HITONIGHT", message.getMessageHash());
+        assertEquals("00:0:YOFORTNITE", message.getMessageHash());
     }
 
     // Tests the rest of the hashes in a loop.
@@ -67,7 +67,7 @@ public class MessagePOETest {
         String[] ids = {"0012345678", "0198765432"};
         String[] recipients = {recipient1, recipient2};
         String[] messages = {message1, message2};
-        String[] expectedHashes = {"00:0:HITONIGHT", "01:1:HIPAYMENT"};
+        String[] expectedHashes = {"00:0:YOFORTNITE", "01:1:EKSEMONEY"};
 
         for (int i = 0; i < messages.length; i++) {
             MessagePOE message = new MessagePOE(ids[i], i, recipients[i], messages[i]);
