@@ -24,7 +24,7 @@ public class MessagePOE {
     private String messageText;
     private String messageHash;
 
-        // Parallel arrays: position 0 in every list belongs to the first message,
+    // Parallel arrays: position 0 in every list belongs to the first message,
     // position 1 to the second message, and so on.
     private static ArrayList<String> messageIDs = new ArrayList<>();
     private static ArrayList<String> messageHashes = new ArrayList<>();
@@ -60,7 +60,7 @@ public class MessagePOE {
         Random random = new Random();
         long number = random.nextLong(1000000000L, 10000000000L);
         return String.valueOf(number);
-        }
+    }
 
     // The message ID must not be more than ten characters.
     public static boolean checkMessageID(String messageID) {
@@ -100,7 +100,7 @@ public class MessagePOE {
         return hash.toUpperCase();
     }
 
-        // Choice 1 = send, 2 = disregard, 3 = store.
+    // Choice 1 = send, 2 = disregard, 3 = store.
     public String sentMessage(int choice) {
         if (choice == 1) {
             addToArrays("Sent");
@@ -133,12 +133,11 @@ public class MessagePOE {
 
     // All the details of one message: ID, Hash, Recipient, Message.
     public String getDetails() {
-         return "Message ID: " + messageID + "\n"
+        return "Message ID: " + messageID + "\n"
                 + "Message Hash: " + messageHash + "\n"
                 + "Recipient: " + recipient + "\n"
                 + "Message: " + messageText + "\n";
     }
-
 
     // Returns how many messages have been sent.
     public static int returnTotalMessages() {
