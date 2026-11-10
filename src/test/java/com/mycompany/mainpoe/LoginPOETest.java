@@ -98,7 +98,7 @@ public class LoginPOETest {
         LoginPOE login = new LoginPOE();
         login.registerUser("Lwandle", "Sakwe", "Lwandle_S", "Ch&&sec@ke99!", "+27838968976");
         boolean loggedIn = login.loginUser("Lwandle_S", "Ch&&sec@ke99!");
-        assertEquals("Welcome Lwandle, it is great to see you.", login.returnLoginStatus(loggedIn));
+        assertEquals("Welcome Lwandle, Sakwe it is great to see you.", login.returnLoginStatus(loggedIn));
     }
 
     @Test
