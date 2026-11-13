@@ -4,6 +4,8 @@
  */
 package com.mycompany.mainpoe;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,9 +24,21 @@ public class MessagePOE {
     private String messageText;
     private String messageHash;
 
-    // These lists are shared by every message while the program is running.
-    private static ArrayList<MessagePOE> sentMessages = new ArrayList<>();
-    private static ArrayList<MessagePOE> storedMessages = new ArrayList<>();
+    // Parallel arrays: position 0 in every list belongs to the first message,
+    // position 1 to the second message, and so on.
+    private static ArrayList<String> messageIDs = new ArrayList<>();
+    private static ArrayList<String> messageHashes = new ArrayList<>();
+    private static ArrayList<String> messageRecipients = new ArrayList<>();
+    private static ArrayList<String> messageTexts = new ArrayList<>();
+    private static ArrayList<String> messageFlags = new ArrayList<>(); // "Sent", "Disregard" or "Stored"
+
+    // The three message arrays from the brief.
+    private static ArrayList<String> sentMessages = new ArrayList<>();
+    private static ArrayList<String> disregardedMessages = new ArrayList<>();
+    private static ArrayList<String> storedMessages = new ArrayList<>();
+
+    // The file the stored messages are saved in.
+    private static final String storageFile = "messages.json";
 
     // Creates a message and automatically creates its hash.
     public MessagePOE(String messageID, int messageNumber, String recipient, String messageText) {
@@ -39,14 +53,13 @@ public class MessagePOE {
         return messageHash;
     }
 
-    // Creates a random ten-digit message ID, one digit at a time.
+    // Creates a random ten-digit number and turns it into a String with String.valueOf.
+    // References: Random.nextLong from https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Random.html
+    // String.valueOf from https://www.w3schools.com/java/ref_string_valueof.asp
     public static String createMessageID() {
         Random random = new Random();
-        String id = "";
-        for (int i = 0; i < 10; i++) {
-            id = id + random.nextInt(10);
-        }
-        return id;
+        long number = random.nextLong(1000000000L, 10000000000L);
+        return String.valueOf(number);
     }
 
     // The message ID must not be more than ten characters.
@@ -90,36 +103,40 @@ public class MessagePOE {
     // Choice 1 = send, 2 = disregard, 3 = store.
     public String sentMessage(int choice) {
         if (choice == 1) {
-            sentMessages.add(this);
+            addToArrays("Sent");
+            sentMessages.add(messageText);
             return "Message successfully sent.";
         } else if (choice == 2) {
+            addToArrays("Disregard");
+            disregardedMessages.add(messageText);
             return "Press 0 to delete the message.";
         } else {
-            storeMessage();
+            addToArrays("Stored");
+            storedMessages.add(messageText);
+            writeStoredFile();
             return "Message successfully stored.";
         }
+    }
+
+    // Adds this message to every parallel array.
+    private void addToArrays(String flag) {
+        messageIDs.add(messageID);
+        messageHashes.add(messageHash);
+        messageRecipients.add(recipient);
+        messageTexts.add(messageText);
+        messageFlags.add(flag);
     }
 
     public String getMessageIDMessage() {
         return "Message ID generated: " + messageID;
     }
 
-    // All the details of one message, in the order from the brief's test data.
+    // All the details of one message: ID, Hash, Recipient, Message.
     public String getDetails() {
-        return "Message Number: " + messageNumber + "\n"
+        return "Message ID: " + messageID + "\n"
                 + "Message Hash: " + messageHash + "\n"
-                + "Message ID: " + messageID + "\n"
                 + "Recipient: " + recipient + "\n"
                 + "Message: " + messageText + "\n";
-    }
-
-    // Returns all the messages sent while the program is running.
-    public static String printMessages() {
-        StringBuilder result = new StringBuilder();
-        for (MessagePOE message : sentMessages) {
-            result.append(message.getDetails()).append("\n");
-        }
-        return result.toString();
     }
 
     // Returns how many messages have been sent.
@@ -127,41 +144,208 @@ public class MessagePOE {
         return sentMessages.size();
     }
 
-    // Clears both lists (used by the unit tests so each test starts fresh).
+    // Getters so the unit tests can check the sent and stored arrays.
+    public static ArrayList<String> getSentMessages() {
+        return sentMessages;
+    }
+
+    public static ArrayList<String> getStoredMessages() {
+        return storedMessages;
+    }
+
+    // Clears every array (used by the unit tests so each test starts fresh).
     public static void clearMessages() {
+        messageIDs.clear();
+        messageHashes.clear();
+        messageRecipients.clear();
+        messageTexts.clear();
+        messageFlags.clear();
         sentMessages.clear();
+        disregardedMessages.clear();
         storedMessages.clear();
     }
 
-    // Stores every stored message in messages.json as a JSON array.
-    public void storeMessage() {
-        storedMessages.add(this);
+    // Menu option a: the sender and recipient of every stored message.
+    public static String displaySenderAndRecipient(String sender) {
+        String result = "";
+        for (int i = 0; i < messageTexts.size(); i++) {
+            if (messageFlags.get(i).equals("Stored")) {
+                result = result + "Sender: " + sender + ", Recipient: " + messageRecipients.get(i) + "\n";
+            }
+        }
+        if (result.equals("")) {
+            return "There are no stored messages.";
+        }
+        return result;
+    }
 
-        try (FileWriter writer = new FileWriter("messages.json")) {
+    // Menu option b: the longest stored message.
+    public static String displayLongestMessage() {
+        String longest = "";
+        for (String text : storedMessages) {
+            if (text.length() > longest.length()) {
+                longest = text;
+            }
+        }
+        if (longest.equals("")) {
+            return "There are no stored messages.";
+        }
+        return longest;
+    }
+
+    // Menu option c: search for a message ID and return its recipient and message.
+    public static String searchByMessageID(String id) {
+        for (int i = 0; i < messageIDs.size(); i++) {
+            if (messageIDs.get(i).equals(id)) {
+                return "Recipient: " + messageRecipients.get(i) + ", Message: " + messageTexts.get(i);
+            }
+        }
+        return "Message ID not found.";
+    }
+
+    // Menu option d: every sent or stored message for one recipient.
+    public static String searchByRecipient(String recipient) {
+        String result = "";
+        for (int i = 0; i < messageRecipients.size(); i++) {
+            boolean notDisregarded = !messageFlags.get(i).equals("Disregard");
+            if (messageRecipients.get(i).equals(recipient) && notDisregarded) {
+                if (!result.equals("")) {
+                    result = result + "\n";
+                }
+                result = result + messageTexts.get(i);
+            }
+        }
+        if (result.equals("")) {
+            return "No messages found for that recipient.";
+        }
+        return result;
+    }
+
+    // Menu option e: delete a message using its hash.
+    public static String deleteByHash(String hash) {
+        for (int i = 0; i < messageHashes.size(); i++) {
+            if (messageHashes.get(i).equals(hash)) {
+                String text = messageTexts.get(i);
+                String flag = messageFlags.get(i);
+
+                // Remove the message from the matching message array.
+                if (flag.equals("Sent")) {
+                    sentMessages.remove(text);
+                } else if (flag.equals("Disregard")) {
+                    disregardedMessages.remove(text);
+                } else {
+                    storedMessages.remove(text);
+                }
+
+                // Remove it from every parallel array.
+                messageIDs.remove(i);
+                messageHashes.remove(i);
+                messageRecipients.remove(i);
+                messageTexts.remove(i);
+                messageFlags.remove(i);
+
+                writeStoredFile();
+                return "Message: \"" + text + "\" successfully deleted.";
+            }
+        }
+        return "Message hash not found.";
+    }
+
+    // Menu option f: a report of every message with the given flag ("Sent" or "Stored").
+    public static String displayReport(String flag) {
+        String report = "";
+        for (int i = 0; i < messageTexts.size(); i++) {
+            if (messageFlags.get(i).equals(flag)) {
+                report = report + "Message ID: " + messageIDs.get(i) + "\n"
+                        + "Message Hash: " + messageHashes.get(i) + "\n"
+                        + "Recipient: " + messageRecipients.get(i) + "\n"
+                        + "Message: " + messageTexts.get(i) + "\n\n";
+            }
+        }
+        if (report.equals("")) {
+            return "There are no " + flag.toLowerCase() + " messages to display.\n";
+        }
+        return report;
+    }
+
+    // Saves every stored message in the JSON file as a JSON array.
+    // JSON references: the format (an array of objects with "name": "value" pairs) is from
+    // W3Schools (n.d.) JSON Introduction https://www.w3schools.com/js/js_json_intro.asp and
+    // JSON.org (n.d.) Introducing JSON https://www.json.org/json-en.html
+    // File writing references: W3Schools (n.d.) Java Create and Write To Files
+    // https://www.w3schools.com/java/java_files_write.asp and Oracle (n.d.) Basic I/O
+    // https://docs.oracle.com/javase/tutorial/essential/io/index.html
+    private static void writeStoredFile() {
+        try (FileWriter writer = new FileWriter(storageFile)) {
             writer.write("[\n");
 
-            for (int i = 0; i < storedMessages.size(); i++) {
-                MessagePOE m = storedMessages.get(i);
+            boolean firstMessage = true;
+            for (int i = 0; i < messageTexts.size(); i++) {
+                if (messageFlags.get(i).equals("Stored")) {
+                    // A comma goes before every message except the first one.
+                    if (!firstMessage) {
+                        writer.write(",\n");
+                    }
+                    firstMessage = false;
 
-                writer.write("  {\n");
-                writer.write("    \"messageID\": \"" + escapeJson(m.messageID) + "\",\n");
-                writer.write("    \"messageNumber\": " + m.messageNumber + ",\n");
-                writer.write("    \"messageHash\": \"" + escapeJson(m.messageHash) + "\",\n");
-                writer.write("    \"recipient\": \"" + escapeJson(m.recipient) + "\",\n");
-                writer.write("    \"message\": \"" + escapeJson(m.messageText) + "\"\n");
-                writer.write("  }");
-
-                // No comma after the last message.
-                if (i < storedMessages.size() - 1) {
-                    writer.write(",");
+                    writer.write("  {\n");
+                    writer.write("    \"messageID\": \"" + escapeJson(messageIDs.get(i)) + "\",\n");
+                    writer.write("    \"messageHash\": \"" + escapeJson(messageHashes.get(i)) + "\",\n");
+                    writer.write("    \"recipient\": \"" + escapeJson(messageRecipients.get(i)) + "\",\n");
+                    writer.write("    \"message\": \"" + escapeJson(messageTexts.get(i)) + "\"\n");
+                    writer.write("  }");
                 }
-                writer.write("\n");
             }
 
-            writer.write("]\n");
+            writer.write("\n]\n");
         } catch (IOException e) {
             System.out.println("Could not store the message: " + e.getMessage());
         }
+    }
+
+    // Reads the JSON file back into the arrays, so stored messages are still there next time the program runs.
+    // References: reading a file line by line with BufferedReader from Oracle (n.d.) Basic I/O
+    // https://docs.oracle.com/javase/tutorial/essential/io/index.html and the JSON format from
+    // JSON.org (n.d.) Introducing JSON https://www.json.org/json-en.html
+    // The file was written by writeStoredFile, so each value is on its own line.
+    public static void loadStoredMessages() {
+        String id = "";
+        String hash = "";
+        String recipient = "";
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(storageFile))) {
+            String line = reader.readLine();
+            while (line != null) {
+                line = line.trim();
+
+                if (line.startsWith("\"messageID\":")) {
+                    id = getJsonValue(line);
+                } else if (line.startsWith("\"messageHash\":")) {
+                    hash = getJsonValue(line);
+                } else if (line.startsWith("\"recipient\":")) {
+                    recipient = getJsonValue(line);
+                } else if (line.startsWith("\"message\":")) {
+                    // "message" is the last value of each stored message, so the message is complete now.
+                    String text = getJsonValue(line);
+                    messageIDs.add(id);
+                    messageHashes.add(hash);
+                    messageRecipients.add(recipient);
+                    messageTexts.add(text);
+                    messageFlags.add("Stored");
+                    storedMessages.add(text);
+                }
+
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            // No file yet means there are no stored messages, so nothing is loaded.
+        }
+    }
+
+    // Gets the value from a line such as:  "recipient": "+27718693002",
+    private static String getJsonValue(String line) {
+        String value = line.substring(line.indexOf(":") + 3, line.lastIndexOf("\""));
+        return value.replace("\\\"", "\"").replace("\\\\", "\\");
     }
 
     // Quotes and backslashes inside text must be escaped to keep the JSON valid.

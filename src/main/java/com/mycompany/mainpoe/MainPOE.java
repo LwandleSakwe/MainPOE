@@ -1,7 +1,6 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  */
-
 package com.mycompany.mainpoe;
 
 import java.util.Scanner;
@@ -45,13 +44,16 @@ public class MainPOE {
 
         boolean loginSuccessful = login.loginUser(loginUsername, loginPassword);
         System.out.println(login.returnLoginStatus(loginSuccessful));
-        
+
         // Users can only send messages if they have logged in successfully.
         if (!loginSuccessful) {
             System.out.println("You must log in successfully before you can send messages.");
             scanner.close();
             return;
         }
+
+        // Reads any messages stored in the JSON file the last time the program ran.
+        MessagePOE.loadStoredMessages();
 
         System.out.println();
         System.out.println("Welcome to QuickChat.");
@@ -73,6 +75,7 @@ public class MainPOE {
             System.out.println("1) Send Messages");
             System.out.println("2) Show recently sent messages");
             System.out.println("3) Quit");
+            System.out.println("4) Stored Messages");
             System.out.print("Choose an option: ");
             choice = readNumber(scanner);
 
@@ -87,14 +90,16 @@ public class MainPOE {
                 System.out.println("Coming Soon.");
             } else if (choice == 3) {
                 System.out.println("Goodbye.");
+            } else if (choice == 4) {
+                storedMessagesMenu(scanner, firstName + " " + lastName);
             } else {
-                System.out.println("Invalid option, please choose 1, 2 or 3.");
+                System.out.println("Invalid option, please choose 1, 2, 3 or 4.");
             }
         }
         scanner.close();
     }
-    
-        // Lets the user enter exactly the number of messages they chose at the start.
+
+    // Lets the user enter exactly the number of messages they chose at the start.
     public static void sendMessages(Scanner scanner, int numberOfMessages) {
         LoginPOE cellChecker = new LoginPOE();
 
@@ -129,7 +134,6 @@ public class MainPOE {
 
             System.out.println();
             System.out.println(message.getMessageIDMessage());
-            System.out.println(message.getDetails());
 
             // Send, disregard or store the message.
             int sendChoice = 0;
@@ -142,7 +146,11 @@ public class MainPOE {
             }
 
             System.out.println(message.sentMessage(sendChoice));
-
+            // The details are only shown once the user has chosen to send the message.
+            if (sendChoice == 1) {
+                System.out.println();
+                System.out.println(message.getDetails());
+            }
             if (sendChoice == 2) {
                 String press = scanner.nextLine();
                 if (press.trim().equals("0")) {
@@ -153,7 +161,45 @@ public class MainPOE {
 
         System.out.println();
         System.out.println("Total messages sent: " + MessagePOE.returnTotalMessages());
-        System.out.println(MessagePOE.printMessages());
+        System.out.println(MessagePOE.displayReport("Sent"));
+    }
+
+    // The Stored Messages menu (main menu option 4).
+    public static void storedMessagesMenu(Scanner scanner, String sender) {
+        int option = 0;
+
+        while (option != 7) {
+            System.out.println();
+            System.out.println("Stored Messages");
+            System.out.println("1) Display the sender and recipient of all stored messages");
+            System.out.println("2) Display the longest stored message");
+            System.out.println("3) Search for a message ID");
+            System.out.println("4) Search for all messages to a recipient");
+            System.out.println("5) Delete a message using its message hash");
+            System.out.println("6) Display a report of all stored messages");
+            System.out.println("7) Back to the main menu");
+            System.out.print("Choose an option: ");
+            option = readNumber(scanner);
+
+            if (option == 1) {
+                System.out.println(MessagePOE.displaySenderAndRecipient(sender));
+            } else if (option == 2) {
+                System.out.println(MessagePOE.displayLongestMessage());
+            } else if (option == 3) {
+                System.out.print("Enter the message ID: ");
+                System.out.println(MessagePOE.searchByMessageID(scanner.nextLine().trim()));
+            } else if (option == 4) {
+                System.out.print("Enter the recipient cell number: ");
+                System.out.println(MessagePOE.searchByRecipient(scanner.nextLine().trim()));
+            } else if (option == 5) {
+                System.out.print("Enter the message hash: ");
+                System.out.println(MessagePOE.deleteByHash(scanner.nextLine().trim().toUpperCase()));
+            } else if (option == 6) {
+                System.out.println(MessagePOE.displayReport("Stored"));
+            } else if (option != 7) {
+                System.out.println("Invalid option, please choose 1 to 7.");
+            }
+        }
     }
 
     // Keeps asking until the user types a whole number, so the program never crashes on bad input.
